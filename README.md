@@ -4,11 +4,11 @@ Este repositorio contiene un MVP de un valuador inmobiliario para inmuebles en l
 
 ## Requisitos
 
-1. **Python 3.10+**.
+1. **Python 3.10+**. En distribuciones basadas en Debian/Ubuntu puede que el intérprete sólo esté disponible como `python3`. Si el comando `python` no existe, instalá el paquete `python-is-python3` o usá explícitamente `python3` en los ejemplos siguientes.
 2. Dependencias del proyecto:
 
    ```bash
-   python -m venv .venv
+   python3 -m venv .venv
    source .venv/bin/activate
    pip install -r requirements.txt
    ```
@@ -35,7 +35,7 @@ Los artefactos generados (`data/`, `models/`, `reports/`) están ignorados por G
 El pipeline se ejecuta desde el entrypoint `src/run_pipeline.py`. Por defecto descargará el dataset de Kaggle, generará `data/props_model.parquet` con DuckDB, procesará con Spark a `data/props_model_sparked.parquet`, entrenará los modelos y guardará los artefactos finales.
 
 ```bash
-python -m src.run_pipeline
+python3 -m src.run_pipeline
 ```
 
 Pasos principales:
@@ -53,7 +53,7 @@ Pasos principales:
 Ejemplo con el CSV sintético incluido:
 
 ```bash
-python -m src.run_pipeline --raw-csv samples/sample_properties.csv
+python3 -m src.run_pipeline --raw-csv samples/sample_properties.csv
 ```
 
 ## Aplicación Streamlit
