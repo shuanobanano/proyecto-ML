@@ -40,7 +40,7 @@ python -m src.run_pipeline
 
 Pasos principales:
 
-1. **Descarga** (`kagglehub`): descarga y descomprime los archivos en `data/raw/`.
+1. **Descarga** (`kagglehub`): descarga y descomprime los archivos en `data/raw/`. Si el dataset sólo provee archivos `.pkl`, el script los convierte automáticamente a CSV para continuar con el flujo.
 2. **SQL/DuckDB** (`src/duckdb_processing.py`): normaliza columnas clave, filtra outliers, crea features derivados y exporta `data/props_model.parquet`. También genera un resumen exploratorio en `reports/duckdb_summary.json`.
 3. **Spark** (`src/spark_processing.py`): recalcula ratios, crea variables binarias y limpia nulos, produciendo `data/props_model_sparked.parquet`.
 4. **Modelado** (`src/train_models.py`): entrena Regresión Lineal, Árbol de Decisión, Random Forest y Gradient Boosting con un `ColumnTransformer` que preprocesa variables numéricas y categóricas. Evalúa con MAE, RMSE y R², guarda las métricas en `reports/metrics.json`, estadísticas descriptivas en `reports/feature_stats.json`, y persiste el mejor modelo en `models/model.pkl` junto a `models/model_metadata.json`.

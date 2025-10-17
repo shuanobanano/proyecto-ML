@@ -60,9 +60,28 @@ def download_dataset(raw_dir: Optional[Path] = None) -> Path:
 
     csv_files = list(temp_target.rglob("*.csv"))
     if not csv_files:
-        raise FileNotFoundError(
-            "No CSV files were found in the downloaded dataset. Please check the Kaggle dataset structure."
-        )
+        pkl_files = list(temp_target.rglob("*.pkl"))
+        if not pkl_files:
+            raise FileNotFoundError(
+                "No CSV or PKL files were found in the downloaded dataset. Please check the Kaggle dataset structure."
+            )
+
+        largest_pkl = max(pkl_files, key=lambda path: path.stat().st_size)
+        LOGGER.info("Converting %s to CSV", largest_pkl.name)
+
+        try:
+            import pandas as pd
+        except ImportError as exc:
+            raise ModuleNotFoundError(
+                "pandas is required to convert the downloaded PKL file. Install it with `pip install pandas`."
+            ) from exc
+
+        df = pd.read_pickle(largest_pkl)
+        converted_csv = raw_dir / f"{largest_pkl.stem}.csv"
+        df.to_csv(converted_csv, index=False)
+        LOGGER.info("Converted pickle saved to %s", converted_csv)
+        return converted_csv
+
     # Pick the largest CSV assuming it contains the listings.
     main_csv = max(csv_files, key=lambda path: path.stat().st_size)
     LOGGER.info("Selected %s as main dataset file", main_csv)
