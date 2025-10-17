@@ -17,22 +17,99 @@ class ColumnNotFoundError(RuntimeError):
 
 
 REQUIRED_FEATURES: Dict[str, Iterable[str]] = {
-    "price": ("price_usd", "price", "precio", "precio_usd"),
-    "surface_total": ("surface_total_in_m2", "surface_total", "superficie_total", "total_surface"),
+    "price": (
+        "price_usd",
+        "price",
+        "precio",
+        "precio_usd",
+        "price_aprox_usd",
+        "precio_aprox_usd",
+    ),
+    "surface_total": (
+        "surface_total_in_m2",
+        "surface_total",
+        "surface_total_m2",
+        "total_surface",
+        "total_surface_m2",
+        "superficie_total",
+        "superficie_total_m2",
+        "superficie_total_en_m2",
+        "superficie_total_mts2",
+        "superficie_total_metros",
+        "sup_total",
+        "sup_total_m2",
+        "sup_tot_m2",
+        "area_total",
+        "area_total_m2",
+        "total_area",
+        "total_area_m2",
+        "metros_totales",
+        "metros_cuadrados_totales",
+        "m2_totales",
+        "m2_total",
+        "total_m2",
+    ),
 }
 
 OPTIONAL_FEATURES: Dict[str, Iterable[str]] = {
-    "surface_covered": ("surface_covered_in_m2", "surface_covered", "superficie_cubierta"),
-    "rooms": ("rooms", "ambientes"),
-    "bedrooms": ("bedrooms", "dormitorios"),
-    "bathrooms": ("bathrooms", "banos"),
-    "property_type": ("property_type", "tipo_propiedad"),
-    "state_name": ("state_name", "state", "provincia", "location"),
-    "neighborhood": ("neighborhood", "barrio", "place_name", "l3"),
-    "currency": ("currency", "moneda"),
-    "latitude": ("lat", "latitude"),
-    "longitude": ("lon", "longitude", "lng"),
-    "antiquity": ("antiquity", "years", "year_built", "construction_year"),
+    "surface_covered": (
+        "surface_covered_in_m2",
+        "surface_covered",
+        "surface_covered_m2",
+        "superficie_cubierta",
+        "superficie_cubierta_m2",
+        "sup_cubierta",
+        "sup_cubierta_m2",
+        "cubierta",
+    ),
+    "rooms": ("rooms", "ambientes", "rooms_number", "cantidad_ambientes"),
+    "bedrooms": (
+        "bedrooms",
+        "dormitorios",
+        "habitaciones",
+        "cantidad_dormitorios",
+    ),
+    "bathrooms": (
+        "bathrooms",
+        "banos",
+        "baños",
+        "cantidad_banos",
+        "bathrooms_number",
+    ),
+    "property_type": (
+        "property_type",
+        "tipo_propiedad",
+        "tipo_de_propiedad",
+        "propertytype",
+    ),
+    "state_name": (
+        "state_name",
+        "state",
+        "provincia",
+        "location",
+        "state_province",
+        "administrative_area_level_1",
+    ),
+    "neighborhood": (
+        "neighborhood",
+        "barrio",
+        "place_name",
+        "l3",
+        "neighbourhood",
+        "neighborhood_name",
+        "locality",
+    ),
+    "currency": ("currency", "moneda", "currency_name"),
+    "latitude": ("lat", "latitude", "latitud"),
+    "longitude": ("lon", "longitude", "lng", "longitud"),
+    "antiquity": (
+        "antiquity",
+        "years",
+        "year_built",
+        "construction_year",
+        "anio_construccion",
+        "ano_construccion",
+    ),
 }
 
 
@@ -59,7 +136,16 @@ def _ensure_required_columns(con: duckdb.DuckDBPyConnection) -> Dict[str, str]:
     for key, candidates in REQUIRED_FEATURES.items():
         column = _find_column(con, candidates)
         if column is None:
-            raise ColumnNotFoundError(f"Required feature '{key}' with candidates {candidates} not found in dataset")
+            available_columns = [row[1] for row in con.execute("PRAGMA table_info(raw)").fetchall()]
+            LOGGER.error(
+                "Required feature '%s' missing. Candidates: %s. Available columns: %s",
+                key,
+                candidates,
+                available_columns,
+            )
+            raise ColumnNotFoundError(
+                f"Required feature '{key}' with candidates {candidates} not found in dataset"
+            )
         resolved[key] = column
     return resolved
 
