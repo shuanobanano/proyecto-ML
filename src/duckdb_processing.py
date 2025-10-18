@@ -280,14 +280,33 @@ def _prepare_raw_table(con: duckdb.DuckDBPyConnection) -> None:
     """Add derived numeric columns to the raw dataset for downstream processing."""
 
     def _normalized_numeric(base_sql: str) -> str:
-        return (
-            "TRY_CAST(NULLIF(REPLACE(" +
-            "REGEXP_REPLACE(" +
-            f"REGEXP_REPLACE({base_sql}, '[^0-9.,]', '', 'g'), " +
-            "'\\.(?=[0-9]{3}(?:[.,]|$))', '', 'g'), " +
-            "',(?=[0-9]{3}(?:[.,]|$))', '', 'g'), "+
-            "',', '.'), '') AS DOUBLE)"
+        """Build a DuckDB SQL expression that normalises numeric strings."""
+
+        expression = """
+            TRY_CAST(
+                NULLIF(
+                    REPLACE(
+                        REGEXP_REPLACE(
+                            REGEXP_REPLACE(
+                                REGEXP_REPLACE({base_sql}, '[^0-9.,]', ''),
+                                '\\.(?=[0-9]{{3}}(?:[.,]|$))',
+                                ''
+                            ),
+                            ',(?=[0-9]{{3}}(?:[.,]|$))',
+                            ''
+                        ),
+                        ',',
+                        '.'
+                    ),
+                    ''
+                )
+            AS DOUBLE)
+        """
+
+        normalized = " ".join(
+            part.strip() for part in expression.splitlines() if part.strip()
         )
+        return normalized.format(base_sql=base_sql)
 
     def _numeric_from_pattern(pattern: str) -> str:
         escaped = pattern.replace("'", "''")
