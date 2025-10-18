@@ -18,6 +18,7 @@ class ColumnNotFoundError(RuntimeError):
 
 REQUIRED_FEATURES: Dict[str, Iterable[str]] = {
     "price": (
+        "price_numeric",
         "price_usd",
         "price",
         "precio",
@@ -48,6 +49,7 @@ REQUIRED_FEATURES: Dict[str, Iterable[str]] = {
         "m2_totales",
         "m2_total",
         "total_m2",
+        "surface_total_extracted",
     ),
 }
 
@@ -61,6 +63,7 @@ OPTIONAL_FEATURES: Dict[str, Iterable[str]] = {
         "sup_cubierta",
         "sup_cubierta_m2",
         "cubierta",
+        "surface_covered_extracted",
     ),
     "rooms": ("rooms", "ambientes", "rooms_number", "cantidad_ambientes"),
     "bedrooms": (
@@ -68,6 +71,7 @@ OPTIONAL_FEATURES: Dict[str, Iterable[str]] = {
         "dormitorios",
         "habitaciones",
         "cantidad_dormitorios",
+        "bedrooms_extracted",
     ),
     "bathrooms": (
         "bathrooms",
@@ -75,6 +79,7 @@ OPTIONAL_FEATURES: Dict[str, Iterable[str]] = {
         "baños",
         "cantidad_banos",
         "bathrooms_number",
+        "bathrooms_extracted",
     ),
     "property_type": (
         "property_type",
@@ -163,9 +168,11 @@ def clean_dataset_with_duckdb(csv_path: str, output_path: str = str(SQL_DATA_PAT
     con = duckdb.connect(database=":memory:")
 
     con.execute(
-        "CREATE TABLE raw AS SELECT * FROM read_csv_auto(?, sample_size=-1, ignore_errors=true)",
+        "CREATE TABLE raw_source AS SELECT * FROM read_csv_auto(?, sample_size=-1, ignore_errors=true)",
         [csv_path],
     )
+
+    _prepare_raw_table(con)
 
     required_cols = _ensure_required_columns(con)
     optional_cols = _resolve_optional_columns(con)
@@ -268,4 +275,64 @@ def clean_dataset_with_duckdb(csv_path: str, output_path: str = str(SQL_DATA_PAT
 
     con.close()
 
+
+def _prepare_raw_table(con: duckdb.DuckDBPyConnection) -> None:
+    """Add derived numeric columns to the raw dataset for downstream processing."""
+
+    def _normalized_numeric(base_sql: str) -> str:
+        return (
+            "TRY_CAST(NULLIF(REPLACE(" +
+            "REGEXP_REPLACE(" +
+            f"REGEXP_REPLACE({base_sql}, '[^0-9.,]', '', 'g'), " +
+            "'\\.(?=[0-9]{3}(?:[.,]|$))', '', 'g'), " +
+            "',(?=[0-9]{3}(?:[.,]|$))', '', 'g'), "+
+            "',', '.'), '') AS DOUBLE)"
+        )
+
+    def _numeric_from_pattern(pattern: str) -> str:
+        escaped = pattern.replace("'", "''")
+        return (
+            _normalized_numeric(
+                "COALESCE(REGEXP_EXTRACT(COALESCE(Features, ''), '"
+                + escaped
+                + "', 1), '')"
+            )
+        )
+
+    price_numeric_expr = _normalized_numeric("COALESCE(Price, '')")
+
+    surface_total_expr = _numeric_from_pattern(
+        r"(?i)(?:superficie\s+total|sup\.?\s*total|total\s*surface|surface\s*total|m2\s*totales|m2\s*total)[^0-9]*([0-9]+(?:[.,][0-9]+)?)"
+    )
+    surface_covered_expr = _numeric_from_pattern(
+        r"(?i)(?:superficie\s+cubierta|sup\.?\s*cubierta|surface\s*covered|m2\s*cubiertos|cubiertos?)[^0-9]*([0-9]+(?:[.,][0-9]+)?)"
+    )
+    rooms_expr = _numeric_from_pattern(r"(?i)(?:ambientes|rooms?)[^0-9]*([0-9]+)")
+    bedrooms_expr = _numeric_from_pattern(
+        r"(?i)(?:dormitorios?|habitaciones?|bedrooms?)[^0-9]*([0-9]+)"
+    )
+    bathrooms_expr = _numeric_from_pattern(
+        r"(?i)(?:baños?|banos?|bathrooms?)[^0-9]*([0-9]+)"
+    )
+
+    con.execute(
+        "DROP TABLE IF EXISTS raw"
+    )
+
+    con.execute(
+        f"""
+        CREATE TABLE raw AS
+        SELECT
+            *,
+            {price_numeric_expr} AS price_numeric,
+            {surface_total_expr} AS surface_total_extracted,
+            {surface_covered_expr} AS surface_covered_extracted,
+            {rooms_expr} AS rooms_extracted,
+            {bedrooms_expr} AS bedrooms_extracted,
+            {bathrooms_expr} AS bathrooms_extracted
+        FROM raw_source
+        """
+    )
+
+    con.execute("DROP TABLE raw_source")
 
