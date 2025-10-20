@@ -1,0 +1,11 @@
+id,price_usd,currency,surface_total_in_m2,surface_covered_in_m2,rooms,bedrooms,bathrooms,property_type,state_name,neighborhood,lat,lon,antiquity
+1,120000,USD,60,55,3,2,1,Departamento,CABA,Palermo,-34.57,-58.42,2000
+2,95000,USD,45,40,2,1,1,Departamento,CABA,Belgrano,-34.56,-58.46,1995
+3,180000,USD,110,95,4,3,2,Casa,CABA,Villa Urquiza,-34.57,-58.49,1980
+4,75000,USD,38,32,2,1,1,Departamento,CABA,Caballito,-34.62,-58.44,2005
+5,210000,USD,140,120,5,4,3,Casa,CABA,Colegiales,-34.58,-58.45,1975
+6,130000,USD,70,65,3,2,2,PH,CABA,Almagro,-34.61,-58.44,1990
+7,165000,USD,90,80,4,3,2,Casa,CABA,Saavedra,-34.53,-58.49,1988
+8,88000,USD,50,45,3,2,1,Departamento,CABA,Nuñez,-34.54,-58.47,2008
+9,260000,USD,160,140,5,4,3,Casa,CABA,Belgrano,-34.56,-58.46,1970
+10,99000,USD,55,50,3,2,1,PH,CABA,Villa Crespo,-34.60,-58.44,1999

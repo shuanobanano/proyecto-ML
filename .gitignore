@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.ipynb_checkpoints/
+.DS_Store
+
+# Data artifacts
+/data/
+!/data/.gitkeep
+/models/
+!/models/.gitkeep
+/reports/
+!/reports/.gitkeep
+
+# Spark checkpoints
+spark-warehouse/
+
